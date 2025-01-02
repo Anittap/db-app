@@ -1,0 +1,5 @@
+Flask
+flask-mysqldb
+redis
+python-dotenv
+flask-cors
