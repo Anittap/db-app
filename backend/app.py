@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_mysqldb import MySQL
 import redis
 import os
@@ -25,11 +25,16 @@ redis_port = os.getenv('REDIS_PORT')
 mysql = MySQL(app)
 redis_cache = redis.StrictRedis(host=redis_host, port=int(redis_port), db=0)
 
-@app.route('/get_db_details', methods=['GET'])
-def get_db_details():
+@app.route('/<tablename>/get_db_details', methods=['GET'])
+def get_db_details(tablename):
     try:
-        cached_data = redis_cache.get('db_details')
+        # Validate the table name to prevent SQL injection
+        if not tablename.isidentifier():
+            return jsonify({"error": f"Invalid table name: {tablename}"}), 400
 
+        # Check Redis cache for the table
+        cache_key = f"db_details:{tablename}"
+        cached_data = redis_cache.get(cache_key)
         if cached_data:
             return jsonify({
                 "source": "cache",
@@ -37,14 +42,20 @@ def get_db_details():
                 "data": cached_data.decode('utf-8')
             })
 
+        # Query the database
         cursor = mysql.connection.cursor()
-        cursor.execute("SELECT * FROM sample_table")
+        query = f"SELECT * FROM {tablename}"
+        try:
+            cursor.execute(query)
+        except Exception as e:
+            return jsonify({"error": f"No such table: {tablename}"}), 404
+
         db_data = cursor.fetchall()
         cursor.close()
 
         if db_data:
             db_details = str(db_data)
-            redis_cache.setex('db_details', 60, db_details)
+            redis_cache.setex(cache_key, 60, db_details)  # Cache data for 60 seconds
 
             return jsonify({
                 "source": "database",
@@ -53,7 +64,7 @@ def get_db_details():
             })
         else:
             return jsonify({
-                "message": "No data found in DB"
+                "message": "No data found in the table"
             }), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
