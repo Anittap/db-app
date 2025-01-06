@@ -1,6 +1,6 @@
 # Dockerized Multi-Container Application Setup
 
-This guide explains how to set up a multi-container application with Docker, including MySQL, Redis, a backend application, and a frontend application. The containers communicate over a custom Docker network. The backend application fetches details from the `sample_table` in the MySQL database and exposes an endpoint at `/get_db_details`.
+This guide explains how to set up a multi-container application with Docker, including MySQL, Redis, a backend application, and a frontend application. The containers communicate over a custom Docker network. The backend application fetches details dynamically from tables in the MySQL database using an endpoint format `/tablename/get_db_contents`.
 
 ## Prerequisites
 
@@ -52,7 +52,6 @@ Launch the backend container with the following environment variables:
 - `DB_NAME`: Name of the MySQL database
 - `DB_USER`: Username for the MySQL database
 - `DB_PASSWORD`: Password for the specified MySQL user
-- `DB_TABLE`: Table name used by the application
 - `REDIS_PORT`: Redis service port
 
 Expose the backend application on port 5000:
@@ -64,15 +63,18 @@ docker container run --name db-app -d --rm \
   -e "DB_NAME=mysqldb" \
   -e "DB_USER=mysqluser" \
   -e "DB_PASSWORD=mysqlpass" \
-  -e "DB_TABLE=sample_table" \
   -e "REDIS_PORT=6379" \
   --network db-net \
   -p 5000:5000 \
   anittap/db-app-backend
 ```
 
-The backend exposes an endpoint at `http://localhost:5000/get_db_details` to fetch details from the `sample_table`.
+The backend exposes a dynamic endpoint format:
+`http://localhost:5000/<table_name>/get_db_contents`
+Example:
 
+`http://localhost:5000/sample_table/get_db_contents`
+`http://localhost:5000/orders/get_db_contents`
 ### 5. Run the Frontend Application
 
 Launch the frontend container with the following environment variables:
@@ -93,8 +95,8 @@ docker container run --name frontend -p 80:8080 \
 
 ## Accessing the Application
 
-- **Frontend**: Open your browser and navigate to `http://localhost`.
-- **Backend Endpoint**: Access the endpoint at `http://localhost:5000/get_db_details` to fetch details from the database table `sample_table`.
+- **Frontend**: Open your browser and navigate to `http://localhost/sample_table`.
+- **Backend Endpoint**: Access the endpoint at `http://localhost:5000/sample_table/get_db_details` to fetch details from the database table `sample_table`.
 
 ## Cleanup
 
