@@ -13,7 +13,7 @@ def index():
 
     try:
         # Fetch data from the backend
-        response = requests.get(f"http://{api_host}:{api_port}/get_db_details")
+        response = requests.get(f"https://{api_host}:{api_port}/get_db_details")
         response.raise_for_status()
         response_data = response.json()
 
