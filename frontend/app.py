@@ -1,19 +1,19 @@
-from flask import Flask, render_template, make_response
+from flask import Flask, render_template, make_response, request
 import os
 import requests
 import ast
 
 app = Flask(__name__)
 
-@app.route("/", strict_slashes=False)
-def index():
+@app.route("/<tablename>", strict_slashes=False)
+def index(tablename):
     # Backend API details
     api_host = os.getenv("API_SERVER", "localhost")
     api_port = os.getenv("API_SERVER_PORT", "8080")
 
     try:
-        # Fetch data from the backend
-        response = requests.get(f"http://{api_host}:{api_port}/get_db_details")
+        # Fetch data from the backend dynamically using the table name
+        response = requests.get(f"https://{api_host}:{api_port}/{tablename}/get_db_details")
         response.raise_for_status()
         response_data = response.json()
 
